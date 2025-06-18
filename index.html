@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dagelijkse Takenlijst</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #fff;
+      color: #111;
+      padding: 1rem;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    .taken-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+    .taken-section {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+      background: #f9f9f9;
+    }
+    h2 {
+      font-size: 1.1rem;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin: 0.5rem 0;
+      cursor: pointer;
+    }
+    input[type="checkbox"] {
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dagelijkse taken</h1>
+  <div class="taken-container" id="takenlijst"></div>
+
+  <script>
+    const takenData = {
+      voor_shift: [
+        "Teams + wijken",
+        "Teams op bord",
+        "Tablets",
+        "Chauffeurscontracten",
+        "Tabletlijsten",
+        "Pasjes",
+        "Dagopstart voorbereiden",
+        "Captainkwartiertje"
+      ],
+      na_shift: [
+        "Wijken afboeken",
+        "Scorelijst bijwerken",
+        "Afspraken?",
+        "Scorelijst printen",
+        "Rookiechallenge bijwerken",
+        "Bord bijwerken",
+        "Gemiddelde groepsapp",
+        "Target Toppers bijwerken bij 5 of hoger",
+        "Dagverslag typen & sturen",
+        "Bureau schoonmaken",
+        "Dagtakenlijst resetten (ALLEEN OP ZATERDAG)"
+      ]
+    };
+
+    const storageKey = "takenChecklist";
+    const dateKey = "takenChecklistDate";
+
+    const vandaag = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+    const vorigeDatum = localStorage.getItem(dateKey);
+
+    if (vorigeDatum !== vandaag) {
+      // Nieuwe dag, reset alle vinkjes
+      localStorage.setItem(storageKey, JSON.stringify({}));
+      localStorage.setItem(dateKey, vandaag);
+    }
+
+    const status = JSON.parse(localStorage.getItem(storageKey)) || {};
+    const lijstContainer = document.getElementById("takenlijst");
+
+    function renderSection(title, taken, sectionKey) {
+      const section = document.createElement("div");
+      section.className = "taken-section";
+
+      const heading = document.createElement("h2");
+      heading.textContent = title;
+      section.appendChild(heading);
+
+      taken.forEach((taak, index) => {
+        const id = `${sectionKey}-${index}`;
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = id;
+        checkbox.checked = !!status[id];
+        checkbox.addEventListener("change", () => {
+          status[id] = checkbox.checked;
+          localStorage.setItem(storageKey, JSON.stringify(status));
+        });
+
+        const label = document.createElement("label");
+        label.htmlFor = id;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(taak));
+        section.appendChild(label);
+      });
+
+      lijstContainer.appendChild(section);
+    }
+
+    renderSection("Voor de shift", takenData.voor_shift, "voor");
+    renderSection("Na de shift", takenData.na_shift, "na");
+  </script>
+</body>
+</html>
