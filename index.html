@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dagelijkse Takenlijst</title>
   <style>
     body {
@@ -44,12 +44,25 @@
       margin-right: 0.5rem;
     }
   </style>
-</head>
-<body>
-  <h1>Dagelijkse taken</h1>
-  <div class="taken-container" id="takenlijst"></div>
 
-  <script>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBb0hR4FJaHKM7I4xbLlL5V6astlT6_Yfc",
+      authDomain: "takenlijst-a3a9d.firebaseapp.com",
+      projectId: "takenlijst-a3a9d",
+      storageBucket: "takenlijst-a3a9d.appspot.com",
+      messagingSenderId: "352064047810",
+      appId: "1:352064047810:web:2225497413be01867e095b",
+      measurementId: "G-TF0G755ZQS"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
     const takenData = {
       voor_shift: [
         "Teams + wijken",
@@ -75,20 +88,27 @@
       ]
     };
 
-    const storageKey = "takenChecklist";
-    const dateKey = "takenChecklistDate";
+    const userId = "default_user"; // Later: replace with real auth
+    const today = new Date().toISOString().split("T")[0];
+    const checklistId = `${userId}_${today}`;
+    const docRef = doc(db, "checklists", checklistId);
 
-    const vandaag = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
-    const vorigeDatum = localStorage.getItem(dateKey);
+    const lijstContainer = document.getElementById("takenlijst");
+    let status = {};
 
-    if (vorigeDatum !== vandaag) {
-      // Nieuwe dag, reset alle vinkjes
-      localStorage.setItem(storageKey, JSON.stringify({}));
-      localStorage.setItem(dateKey, vandaag);
+    async function loadChecklist() {
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        status = snap.data();
+      } else {
+        status = {};
+      }
+      renderAll();
     }
 
-    const status = JSON.parse(localStorage.getItem(storageKey)) || {};
-    const lijstContainer = document.getElementById("takenlijst");
+    async function saveChecklist() {
+      await setDoc(docRef, status);
+    }
 
     function renderSection(title, taken, sectionKey) {
       const section = document.createElement("div");
@@ -106,7 +126,7 @@
         checkbox.checked = !!status[id];
         checkbox.addEventListener("change", () => {
           status[id] = checkbox.checked;
-          localStorage.setItem(storageKey, JSON.stringify(status));
+          saveChecklist();
         });
 
         const label = document.createElement("label");
@@ -119,8 +139,17 @@
       lijstContainer.appendChild(section);
     }
 
-    renderSection("Voor de shift", takenData.voor_shift, "voor");
-    renderSection("Na de shift", takenData.na_shift, "na");
+    function renderAll() {
+      lijstContainer.innerHTML = "";
+      renderSection("Voor de shift", takenData.voor_shift, "voor");
+      renderSection("Na de shift", takenData.na_shift, "na");
+    }
+
+    loadChecklist();
   </script>
+</head>
+<body>
+  <h1>Dagelijkse taken</h1>
+  <div class="taken-container" id="takenlijst"></div>
 </body>
 </html>
